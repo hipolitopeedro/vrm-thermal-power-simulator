@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Motherboard VRM Electrical Loss, Thermal Physics & LLC Simulator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { background-color: #090d16; color: #e2e8f0; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+    .card { background-color: #131926; border: 1px solid #232d42; border-radius: 0.75rem; }
+  </style>
+</head>
+<body class="min-h-screen pb-16">
+  <header class="border-b border-slate-800 bg-[#0d121c] sticky top-0 z-20">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider bg-amber-600 text-white rounded">Power Electronics & VRM</span>
+          <span class="text-xs text-slate-400 font-mono">Synchronous Buck MOSFET Losses • Heatsink Thermals • LLC Vdroop & Transient Spikes</span>
+        </div>
+        <h1 class="text-xl md:text-2xl font-bold text-white mt-1">Motherboard VRM Thermal Physics & Load-Line Calibration (LLC) Simulator</h1>
+      </div>
+      <a href="https://github.com/hipolitopeedro/vrm-thermal-power-simulator" target="_blank" class="px-3 py-1.5 text-xs font-semibold rounded border border-slate-700 hover:bg-slate-800 text-slate-200 transition">
+        Ver Código no GitHub
+      </a>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 mt-6 space-y-8">
+    <!-- VRM Electrical & Thermal Calculator -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="card p-5 lg:col-span-5 space-y-4">
+        <div class="border-b border-slate-800 pb-3">
+          <span class="text-xs font-mono text-amber-400 uppercase">Conversor Buck Síncrono Multifásico</span>
+          <h2 class="text-base font-bold text-white mt-0.5">1. Parâmetros de Carga da CPU & Topologia VRM</h2>
+        </div>
+
+        <div class="space-y-3 text-sm">
+          <div>
+            <label class="text-xs text-slate-400">Topologia de Placa-Mãe (Preset ou Custom)</label>
+            <select id="vrmPreset" onchange="applyVrmPreset()" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-white font-mono text-xs">
+              <option value="b550m_aorus" selected>B550M Entry/Mid (5x2 Discrete Low-RDS(on) 4.5mΩ)</option>
+              <option value="b650_drmos">B650/X570 Mid-Range (8 Fases 60A DrMOS 1.8mΩ)</option>
+              <option value="x670e_flagship">X670E/X870E Flagship (14 Fases 90A SPS 1.1mΩ)</option>
+              <option value="a520_budget">A520/B450 Budget Sem Dissipador (4 Fases 7.2mΩ)</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-slate-400">Corrente CPU TDC (Amperes)</label>
+              <input type="number" step="5" id="cpuAmps" value="95" oninput="calcVrm()" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-white font-mono" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-400">Vcore sob Carga (Volts)</label>
+              <input type="number" step="0.02" id="cpuVcore" value="1.26" oninput="calcVrm()" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-white font-mono" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="text-xs text-slate-400">Fases Vcore</label>
+              <input type="number" id="vrmPhases" value="5" oninput="calcVrm()" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-white font-mono" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-400">Freq. PWM (kHz)</label>
+              <input type="number" step="50" id="pwmKhz" value="350" oninput="calcVrm()" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-white font-mono" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-400">Amb. Gabinete (°C)</label>
+              <input type="number" id="ambTemp" value="28" oninput="calcVrm()" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-white font-mono" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VRM Outputs -->
+      <div class="card p-5 lg:col-span-7 flex flex-col justify-between space-y-4">
+        <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
+          <div>
+            <span class="text-xs font-mono text-emerald-400 uppercase">Balanço Energético & Térmico</span>
+            <h2 class="text-base font-bold text-white mt-0.5">Dissipação nos MOSFETs & Temperatura Estacionária</h2>
+          </div>
+          <span id="vrmStatusBadge" class="px-2.5 py-1 text-xs font-mono font-bold rounded bg-emerald-500/20 text-emerald-400">Operação Segura</span>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div class="bg-[#0c1018] p-3.5 rounded-lg border border-slate-800">
+            <p class="text-xs text-slate-400">Potência Entregue à CPU</p>
+            <p class="text-2xl font-bold text-sky-400 font-mono mt-1" id="outCpuWatts">119.7 W</p>
+            <p class="text-xs text-slate-500 font-mono mt-0.5" id="outPhaseAmps">19.0 A / fase</p>
+          </div>
+          <div class="bg-[#0c1018] p-3.5 rounded-lg border border-slate-800">
+            <p class="text-xs text-slate-400">Calor Dissipado no VRM</p>
+            <p class="text-2xl font-bold text-amber-400 font-mono mt-1" id="outVrmLoss">14.2 W</p>
+            <p class="text-xs text-slate-500 font-mono mt-0.5" id="outVrmEff">Eficiência: 89.4%</p>
+          </div>
+          <div class="bg-[#0c1018] p-3.5 rounded-lg border border-slate-800">
+            <p class="text-xs text-slate-400">Temp. MOSFET / PCB</p>
+            <p class="text-2xl font-bold text-emerald-400 font-mono mt-1" id="outMosfetTemp">69.2 °C</p>
+            <p class="text-xs text-slate-500 font-mono mt-0.5">Limite Throttling: 105 °C</p>
+          </div>
+        </div>
+
+        <div class="bg-[#0c1018] p-3.5 rounded-lg border border-slate-800 grid grid-cols-3 gap-3 text-xs font-mono">
+          <div>
+            <span class="text-slate-400 block">Perda Condução (I²·R):</span>
+            <span class="text-white font-bold" id="outCondLoss">8.6 W</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block">Perda Chaveamento (f_sw):</span>
+            <span class="text-white font-bold" id="outSwLoss">4.1 W</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block">Perda Indutores (DCR):</span>
+            <span class="text-white font-bold" id="outIndLoss">1.5 W</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LLC Transient Vdroop & Overshoot Chart -->
+    <section class="card p-5 space-y-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <div>
+          <h2 class="text-base font-bold text-white">2. Simulador de Resposta Transiente de Load-Line Calibration (LLC)</h2>
+          <p class="text-xs text-slate-400">Comportamento do Vcore durante um degrau de carga AVX (15A Idle → 115A Full Load → 15A Idle). LLC Médio/Turbo equilibra Vdroop e evita picos de sobretensão perigosos na descarga.</p>
+        </div>
+      </div>
+
+      <div class="bg-[#0c1018] p-4 rounded-lg border border-slate-800">
+        <canvas id="llcChart" height="165"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const presets = {
+      b550m_aorus:    { phases: 5, rdsOn: 0.0028, rTheta: 2.9 },
+      b650_drmos:     { phases: 8, rdsOn: 0.0018, rTheta: 2.1 },
+      x670e_flagship: { phases: 14, rdsOn: 0.0011, rTheta: 1.4 },
+      a520_budget:    { phases: 4, rdsOn: 0.0058, rTheta: 4.8 }
+    };
+
+    function applyVrmPreset() {
+      const p = presets[document.getElementById('vrmPreset').value];
+      document.getElementById('vrmPhases').value = p.phases;
+      calcVrm();
+    }
+
+    function calcVrm() {
+      const key = document.getElementById('vrmPreset').value;
+      const p = presets[key];
+      const amps = parseFloat(document.getElementById('cpuAmps').value) || 95;
+      const vcore = parseFloat(document.getElementById('cpuVcore').value) || 1.26;
+      const phases = parseInt(document.getElementById('vrmPhases').value) || 5;
+      const khz = parseFloat(document.getElementById('pwmKhz').value) || 350;
+      const amb = parseFloat(document.getElementById('ambTemp').value) || 28;
+
+      const cpuWatts = amps * vcore;
+      const iPhase = amps / phases;
+
+      // Conduction, switching, inductor losses
+      const condLoss = phases * (iPhase * iPhase) * p.rdsOn * 1.25;
+      const swLoss = phases * (khz / 300) * 0.68 * (amps / 85);
+      const indLoss = phases * (iPhase * iPhase) * 0.0008;
+      const totalLoss = condLoss + swLoss + indLoss;
+      const eff = (cpuWatts / (cpuWatts + totalLoss)) * 100;
+      const mosfetTemp = amb + (totalLoss * p.rTheta);
+
+      document.getElementById('outCpuWatts').textContent = cpuWatts.toFixed(1) + ' W';
+      document.getElementById('outPhaseAmps').textContent = iPhase.toFixed(1) + ' A / fase';
+      document.getElementById('outVrmLoss').textContent = totalLoss.toFixed(1) + ' W';
+      document.getElementById('outVrmEff').textContent = `Eficiência: ${eff.toFixed(1)}%`;
+      document.getElementById('outCondLoss').textContent = condLoss.toFixed(1) + ' W';
+      document.getElementById('outSwLoss').textContent = swLoss.toFixed(1) + ' W';
+      document.getElementById('outIndLoss').textContent = indLoss.toFixed(1) + ' W';
+
+      const tempEl = document.getElementById('outMosfetTemp');
+      const badge = document.getElementById('vrmStatusBadge');
+      tempEl.textContent = mosfetTemp.toFixed(1) + ' °C';
+
+      if (mosfetTemp >= 100) {
+        tempEl.className = 'text-2xl font-bold text-red-400 font-mono mt-1';
+        badge.textContent = 'VRM Thermal Throttling (>100°C)!';
+        badge.className = 'px-2.5 py-1 text-xs font-mono font-bold rounded bg-red-500/20 text-red-400';
+      } else if (mosfetTemp >= 82) {
+        tempEl.className = 'text-2xl font-bold text-amber-400 font-mono mt-1';
+        badge.textContent = 'Alerta Térmico (Requer Airflow)';
+        badge.className = 'px-2.5 py-1 text-xs font-mono font-bold rounded bg-amber-500/20 text-amber-400';
+      } else {
+        tempEl.className = 'text-2xl font-bold text-emerald-400 font-mono mt-1';
+        badge.textContent = 'Operação Térmica Segura';
+        badge.className = 'px-2.5 py-1 text-xs font-mono font-bold rounded bg-emerald-500/20 text-emerald-400';
+      }
+    }
+
+    function initLlcChart() {
+      const timeSteps = ['0 µs (Idle)', '10 µs (Load Hit)', '25 µs', '50 µs (Full Load)', '100 µs (Full Load)', '150 µs (Load Release)', '175 µs', '220 µs (Idle)'];
+      const ctx = document.getElementById('llcChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: timeSteps,
+          datasets: [
+            { label: 'LLC Standard / Auto (Alto Vdroop)', data: [1.300, 1.185, 1.215, 1.220, 1.220, 1.315, 1.302, 1.300], borderColor: '#64748b', tension: 0.25, borderWidth: 2 },
+            { label: 'LLC Medium / Turbo (Recomendado)', data: [1.300, 1.235, 1.262, 1.265, 1.265, 1.335, 1.305, 1.300], borderColor: '#10b981', tension: 0.25, borderWidth: 3 },
+            { label: 'LLC Extreme (Overshoot Perigoso!)', data: [1.300, 1.282, 1.298, 1.300, 1.300, 1.395, 1.325, 1.300], borderColor: '#ef4444', borderDash: [4, 4], tension: 0.25, borderWidth: 2.5 }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 11 } } } },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
+            y: { min: 1.15, max: 1.42, ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' }, title: { display: true, text: 'Vcore (V)', color: '#94a3b8' } }
+          }
+        }
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      calcVrm();
+      initLlcChart();
+    });
+  </script>
+</body>
+</html>

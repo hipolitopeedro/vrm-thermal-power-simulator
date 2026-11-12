@@ -3,6 +3,8 @@
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Hardware Engineering](https://img.shields.io/badge/Power_Electronics-VRM_%26_LLC_Physics-FF6F00?style=for-the-badge)
 
+> **Live Interactive VRM Thermal & LLC Transient Simulator (GitHub Pages):** [https://hipolitopeedro.github.io/vrm-thermal-power-simulator/](https://hipolitopeedro.github.io/vrm-thermal-power-simulator/)
+>
 > **English:** Electrical and thermal physics modeling suite for motherboard **Voltage Regulator Modules (VRMs)** and **Load-Line Calibration (LLC)**. Simulates multi-phase synchronous buck converter **MOSFET conduction losses ($I^2 \cdot R_{DS(on)}$)**, **switching losses ($f_{sw}$)**, inductor DCR heat dissipation, steady-state **VRM heatsink temperatures** under varying case airflow, and **transient Vdroop / voltage overshoot** during heavy AVX current steps.
 >
 > **Português:** Suíte de modelagem física (elétrica e térmica) para **VRMs de placas-mãe** e **Load-Line Calibration (LLC)**. Simula **perdas por condução ($I^2 \cdot R_{DS(on)}$)** e **chaveamento ($f_{sw}$)** em MOSFETs de conversores buck síncronos multifásicos, dissipação em indutores (DCR), **temperatura estacionária dos dissipadores do VRM** e **Vdroop / picos transientes de tensão** durante variações bruscas de corrente (carga AVX).
