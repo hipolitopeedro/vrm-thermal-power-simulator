@@ -1,7 +1,7 @@
 {
   "motherboards": [
     {
-      "name": "Gigabyte B550M Aorus Elite",
+      "name": "AM4 B550 Entry (5+3 Discrete Low-RDSon)",
       "topology_label": "5+3 Discrete",
       "vcore_phases": 5,
       "high_side_rds_on_mohm": 4.8,
@@ -12,7 +12,7 @@
       "heatsink_r_theta_c_per_w": 2.35
     },
     {
-      "name": "MSI MAG B550 Tomahawk",
+      "name": "AM4 B550/X570 Mid-Range (10+2 DrMOS 60A)",
       "topology_label": "10+2 DrMOS 60A",
       "vcore_phases": 10,
       "high_side_rds_on_mohm": 2.9,
@@ -23,15 +23,26 @@
       "heatsink_r_theta_c_per_w": 1.45
     },
     {
-      "name": "ASUS ROG Strix B550-F Gaming",
-      "topology_label": "12+2 Teamed 50A",
-      "vcore_phases": 12,
-      "high_side_rds_on_mohm": 3.1,
-      "low_side_rds_on_mohm": 1.4,
-      "switching_freq_khz": 400,
-      "switching_transition_ns": 10.0,
-      "inductor_dcr_mohm": 0.32,
-      "heatsink_r_theta_c_per_w": 1.40
+      "name": "AM5 B650/X670E High-End (14+2 SPS 80A)",
+      "topology_label": "14+2 SPS 80A",
+      "vcore_phases": 14,
+      "high_side_rds_on_mohm": 2.1,
+      "low_side_rds_on_mohm": 0.9,
+      "switching_freq_khz": 500,
+      "switching_transition_ns": 7.5,
+      "inductor_dcr_mohm": 0.22,
+      "heatsink_r_theta_c_per_w": 1.15
+    },
+    {
+      "name": "AM5 X870E Flagship (18+2 SPS 110A)",
+      "topology_label": "18+2 SPS 110A",
+      "vcore_phases": 18,
+      "high_side_rds_on_mohm": 1.6,
+      "low_side_rds_on_mohm": 0.7,
+      "switching_freq_khz": 600,
+      "switching_transition_ns": 6.0,
+      "inductor_dcr_mohm": 0.18,
+      "heatsink_r_theta_c_per_w": 0.95
     }
   ]
 }
